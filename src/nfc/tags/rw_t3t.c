@@ -1956,6 +1956,10 @@ void rw_t3t_act_handle_fmt_rsp (tRW_T3T_CB *p_cb, BT_HDR *p_msg_rsp)
                  ||(memcmp (p_cb->peer_nfcid2, &p_t3t_rsp[T3T_MSG_RSP_OFFSET_IDM], NCI_NFCID2_LEN) != 0)  )   /* verify response IDm */
         {
             evt_data.status = NFC_STATUS_FAILED;
+	} else if (p_msg_rsp->len <
+                   (T3T_MSG_RSP_OFFSET_CHECK_DATA + T3T_MSG_BLOCKSIZE)) {
+            evt_data.status = NFC_STATUS_FAILED;
+            android_errorWriteLog(0x534e4554, "120506143");
         }
         else
         {
@@ -2168,19 +2172,17 @@ void rw_t3t_act_handle_sro_rsp (tRW_T3T_CB *p_cb, BT_HDR *p_msg_rsp)
                  ||(memcmp (p_cb->peer_nfcid2, &p_t3t_rsp[T3T_MSG_RSP_OFFSET_IDM], NCI_NFCID2_LEN) != 0)  )   /* verify response IDm */
         {
             evt_data.status = NFC_STATUS_FAILED;
+	} else if (p_msg_rsp->len <
+                   (T3T_MSG_RSP_OFFSET_CHECK_DATA + T3T_MSG_BLOCKSIZE)) {
+            evt_data.status = NFC_STATUS_FAILED;
+            android_errorWriteLog(0x534e4554, "120506143");
         }
         else
         {
             /* Check if memory configuration (MC) block to see if SYS_OP=1 (NDEF enabled) */
             p_mc = &p_t3t_rsp[T3T_MSG_RSP_OFFSET_CHECK_DATA];  /* Point to MC data of CHECK response */
-
-            if (p_mc[T3T_MSG_FELICALITE_MC_OFFSET_SYS_OP] != 0x01)
-            {
-                /* Tag is not currently enabled for NDEF */
-                evt_data.status = NFC_STATUS_FAILED;
-            }
-            else
-            {
+            evt_data.status = NFC_STATUS_FAILED;
+            if (p_mc[T3T_MSG_FELICALITE_MC_OFFSET_SYS_OP] == 0x01) {
                 /* Set MC_SP field with MC[0] = 0x00 & MC[1] = 0xC0 (Hardlock) to change access permission from RW to RO */
                 p_mc[T3T_MSG_FELICALITE_MC_OFFSET_MC_SP]     = 0x00;
                 /* Not changing the access permission of Subtraction Register and MC[0:1] */
